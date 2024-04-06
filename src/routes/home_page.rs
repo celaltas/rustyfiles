@@ -1,42 +1,19 @@
-use actix_web::{get, HttpRequest, HttpResponse, Responder};
+use actix_web::{get, web, HttpRequest, HttpResponse, Error};
+use surrealdb::{engine::remote::ws::Client, Surreal};
 use tera::{Context, Tera};
 
 use crate::domain::FileRecord;
 
-
-
-
 #[get("/")]
-pub async fn home_page(_req: HttpRequest) -> impl Responder {
+pub async fn home_page(_req: HttpRequest, db: web::Data<Surreal<Client>>) -> Result<HttpResponse,Error> {
     let mut ctx = Context::new();
     let tera = Tera::new("../static/**/*").expect("failed to new tera");
-    let mut records = vec![];
-    records.push(FileRecord {
-        id: 1,
-        filename: "test.txt".to_string(),
-        size: 1024,
-        mime_type: "text/plain".to_string(),
-        created_at: chrono::Utc::now().naive_utc(),
-    });
-    records.push(FileRecord {
-        id: 2,
-        filename: "test.png".to_string(),
-        size: 1024,
-        mime_type: "image/png".to_string(),
-        created_at: chrono::Utc::now().naive_utc(),
-    });
-    records.push(FileRecord {
-        id: 3,
-        filename: "test.pdf".to_string(),
-        size: 1024,
-        mime_type: "application/pdf".to_string(),
-        created_at: chrono::Utc::now().naive_utc(),
-    });
-
+    let sql = "SELECT * FROM files ORDER BY created_at DESC LIMIT 10 START 1";
+    let mut result = db.query(sql).await.unwrap();
+    let records:Vec<FileRecord> = result.take(0).unwrap();
     ctx.insert("records", &records);
-
     let rendered = tera
         .render("home_page.html", &ctx)
         .expect("Failed to render template");
-    HttpResponse::Ok().body(rendered)
+    Ok(HttpResponse::Ok().body(rendered))
 }

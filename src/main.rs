@@ -1,9 +1,12 @@
 use std::net::TcpListener;
-use rustyfiles::startup::run;
+use rustyfiles::{configuration::{connect_db, get_configuration}, startup::run};
 
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let listener = TcpListener::bind("127.0.0.1:8080").expect("Failed to bind random port");
-    run(listener)?.await
+    let configuration = get_configuration().expect("Failed to read configuration.");
+    let address = format!("{}:{}",configuration.application.host, configuration.application.port);
+    let listener = TcpListener::bind(address).expect("Failed to bind port");
+    let client = connect_db(configuration.database).await.expect("Failed to connect surrealdb");
+    run(listener, client)?.await
 }

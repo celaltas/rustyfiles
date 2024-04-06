@@ -2,7 +2,7 @@ use crate::helpers::spawn_test_server;
 
 #[actix_web::test]
 async fn test_download_file_url_exist() {
-    let address = spawn_test_server();
+    let address = spawn_test_server().await;
     let client = reqwest::Client::new();
     let record_id = 1;
     let response = client

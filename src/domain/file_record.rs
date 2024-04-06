@@ -1,25 +1,21 @@
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Local};
+use serde::{Deserialize, Serialize};
 
-
-
-
-#[derive(serde::Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct FileRecord {
-    pub id: u64,
     pub filename: String,
     pub size: u64,
     pub mime_type: String,
-
     #[serde(with = "chorono_serde")]
-    pub created_at: NaiveDateTime,
+    pub created_at: DateTime<Local>,
 }
 
 mod chorono_serde {
-    use chrono::NaiveDateTime;
+    use chrono::{DateTime, Local, NaiveDateTime};
     use serde::{self, Deserialize, Deserializer, Serializer};
 
     const FORMAT: &'static str = "%Y-%m-%d %H:%M:%S";
-    pub fn serialize<S>(date: &NaiveDateTime, serializer: S) -> Result<S::Ok, S::Error>
+    pub fn serialize<S>(date: &DateTime<Local>, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -27,12 +23,13 @@ mod chorono_serde {
         serializer.serialize_str(&s)
     }
 
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<NaiveDateTime, D::Error>
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<DateTime<Local>, D::Error>
     where
         D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        let dt = NaiveDateTime::parse_from_str(&s, FORMAT).map_err(serde::de::Error::custom)?;
-        Ok(dt)
+        let dt = NaiveDateTime::parse_from_str(&s, FORMAT).unwrap()
+            .and_local_timezone(Local);
+        Ok(dt.unwrap())
     }
 }

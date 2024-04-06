@@ -28,11 +28,9 @@ pub struct DatabaseSettings {
 }
 
 pub fn get_configuration() -> Result<Settings, ConfigError> {
-    let current_dir = std::env::current_dir().expect("Failed to determine the current directory");
-    let configuration_directory = current_dir.join("configuration");
-    let configuration_file = configuration_directory.join("base.yaml");
+    let configuration_file = "../configuration/base.yaml";
     let builder = Config::builder().add_source(File::new(
-        configuration_file.to_str().unwrap(),
+        configuration_file,
         FileFormat::Yaml,
     ));
     let config = builder.build()?;
@@ -64,12 +62,12 @@ mod tests {
         assert!(res.is_ok());
         let expected = Settings {
             application: ApplicationSettings {
-                host: "localhost".to_string(),
+                host: "127.0.0.1".to_string(),
                 port: 8080,
             },
             database: DatabaseSettings {
-                host: "localhost".to_string(),
-                port: 3306,
+                host: "127.0.0.1".to_string(),
+                port: 8000,
                 username: "root".to_string(),
                 password: "root".to_string(),
                 dbname: "test".to_string(),

@@ -19,10 +19,10 @@
     <div class="container mt-5">
         <h1 class="mb-4">RustyFiles</h1>
 
+        {% if records|length > 1 %}
         <table class="table">
             <thead>
                 <tr>
-
                     <th scope="col">#</th>
                     <th scope="col">File Name</th>
                     <th scope="col">Size</th>
@@ -33,29 +33,80 @@
             </thead>
             <tbody>
                 <!-- Sample row, you can generate dynamically from backend -->
-
-
-                {% if records|length > 1 %}
-                <ul>
-                    {% for rec in records %}
-                    <tr class="justify-content-center">
-                        <td>{{loop.index}}.</td>
-                        <td>{{rec.filename}}</td>
-                        <td>{{rec.size}}</td>
-                        <td>{{rec.mime_type}}</td>
-                        <td>{{rec.created_at}}</td>
-                        <td>
-                            <button class="btn btn-primary me-2" type="button">Download</button>
-                            <button class="btn btn-danger" type="button">Delete</button>
-                        </td>
-
-                    </tr>
-                    {% endfor %}
-                </ul>
-                {% endif %}
+                {% for rec in records %}
+                <tr class="justify-content-center">
+                    <td>{{loop.index}}.</td>
+                    <td>{{rec.filename}}</td>
+                    <td>{{rec.size}}</td>
+                    <td>{{rec.mime_type}}</td>
+                    <td>{{rec.created_at}}</td>
+                    <td>
+                        <button class="btn btn-primary me-2" type="button">Download</button>
+                        <button class="btn btn-danger" type="button">Delete</button>
+                    </td>
+                </tr>
+                {% endfor %}
                 <!-- Add more rows dynamically here -->
             </tbody>
         </table>
+        {% else %}
+        <div class="alert alert-info" role="alert">
+            No records found.
+        </div>
+        {% endif %}
+
+        <nav aria-label="Page navigation example">
+            <ul class="pagination justify-content-end">
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" tabindex="-1">Previous</a>
+                </li>
+                <li class="page-item"><a class="page-link" href="#">1</a></li>
+                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                <li class="page-item">
+                    <a class="page-link" href="#">Next</a>
+                </li>
+            </ul>
+        </nav>
+
+        <form method="post" enctype="multipart/form-data" action="v1/files">
+            <label for="file">File</label>
+            <input id="file" name="file" type="file" />
+            <button>Upload</button>
+          </form>
+        
+
+        <!-- <form id="uploadForm" method="post" enctype="multipart/form-data" action="v1/files">
+            <input type="file" id="file" style="display: none;">
+            <label for="file" class="button" style="background: #0450d5;
+                                                     color: white;
+                                                     line-height: 1.2;
+                                                     padding: 15px;
+                                                     border-radius: 4px;
+                                                     cursor: pointer;
+                                                     display: inline-block;">
+                + Upload File
+            </label>
+        </form>
+        
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var fileInput = document.getElementById('file');
+                var uploadForm = document.getElementById('uploadForm');
+        
+                document.querySelector('.button').addEventListener('click', function () {
+                    fileInput.click();
+                });
+        
+                fileInput.addEventListener('change', function () {
+                    uploadForm.submit();
+                });
+            });
+        </script> -->
+        
+
+
+
     </div>
 
     <!-- Bootstrap Bundle with Popper -->
