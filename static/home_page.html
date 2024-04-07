@@ -24,6 +24,7 @@
             <thead>
                 <tr>
                     <th scope="col">#</th>
+                    <th scope="col">ID</th>
                     <th scope="col">File Name</th>
                     <th scope="col">Size</th>
                     <th scope="col">Mime Type</th>
@@ -36,6 +37,7 @@
                 {% for rec in records %}
                 <tr class="justify-content-center">
                     <td>{{loop.index}}.</td>
+                    <td>{{rec.id.id["String"]}}</td>
                     <td>{{rec.filename}}</td>
                     <td>{{rec.size}}</td>
                     <td>{{rec.mime_type}}</td>

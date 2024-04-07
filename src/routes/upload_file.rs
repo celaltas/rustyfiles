@@ -1,22 +1,17 @@
-use std::{
-    fs::File,
-    io::{self, Write},
-    path::PathBuf,
-};
-
+use std::{io::Write, path::PathBuf};
 use actix_multipart::Multipart;
-use actix_web::{post, web, Error, HttpResponse};
-use chrono::{DateTime, Local, NaiveDateTime};
+use actix_web::{post, web::{self, Redirect}, Error, HttpResponse};
+use chrono::{DateTime, Local};
 use futures_util::StreamExt as _;
 use surrealdb::{engine::remote::ws::Client, Surreal};
 
-use crate::domain::FileRecord;
+use crate::domain::{DBFileRecord, FileRecord};
 
 #[post("v1/files")]
 pub async fn upload_file(
     mut payload: Multipart,
     db: web::Data<Surreal<Client>>,
-) -> Result<HttpResponse, Error> {
+) -> Result<Redirect, Error> {
     while let Some(item) = payload.next().await {
         let mut field = item?;
         let content_type = field.content_disposition();
@@ -32,7 +27,7 @@ pub async fn upload_file(
         }
     }
 
-    Ok(HttpResponse::Ok().finish())
+    Ok(Redirect::to("/"))
 }
 
 async fn create_file_record(
@@ -51,7 +46,7 @@ async fn create_file_record(
         mime_type: mime,
         created_at: current_local,
     };
-    let _created: Vec<FileRecord> = db.create("files").content(record).await?;
+    let _created: Vec<DBFileRecord> = db.create("files").content(record).await?;
 
     Ok(())
 }

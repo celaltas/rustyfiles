@@ -28,9 +28,10 @@ pub struct DatabaseSettings {
 }
 
 pub fn get_configuration() -> Result<Settings, ConfigError> {
-    let configuration_file = "../configuration/base.yaml";
+    let base_path = std::env::current_dir().expect("Failed to determine the current directory");
+    let conf_path = base_path.join("configuration/base");
     let builder = Config::builder().add_source(File::new(
-        configuration_file,
+        conf_path.to_str().unwrap(),
         FileFormat::Yaml,
     ));
     let config = builder.build()?;
