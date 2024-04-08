@@ -15,6 +15,7 @@ pub struct Settings {
 pub struct ApplicationSettings {
     pub host: String,
     pub port: u16,
+    pub storage: String,
 }
 
 #[derive(serde::Deserialize, Debug, Clone, PartialEq)]
@@ -65,6 +66,7 @@ mod tests {
             application: ApplicationSettings {
                 host: "127.0.0.1".to_string(),
                 port: 8080,
+                storage: "uploads".to_string(),
             },
             database: DatabaseSettings {
                 host: "127.0.0.1".to_string(),

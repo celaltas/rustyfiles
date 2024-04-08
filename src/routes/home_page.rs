@@ -10,8 +10,11 @@ pub async fn home_page(
     db: web::Data<Surreal<Client>>,
 ) -> Result<HttpResponse, Error> {
     let mut ctx = Context::new();
-    let tera = Tera::new("../static/**/*").expect("failed to new tera");
-    let sql = "SELECT * FROM files ORDER BY created_at DESC LIMIT 10 START 1";
+    let mut base_dir = std::env::current_dir().unwrap();
+    base_dir.push("static");
+    let static_dir = format!("{}/**/*", base_dir.to_str().unwrap());
+    let tera = Tera::new(&static_dir).expect("failed to new tera");
+    let sql = "SELECT * FROM files ORDER BY created_at DESC LIMIT 100 START 1";
     let mut result = db.query(sql).await.unwrap();
     let records: Vec<DBFileRecord> = result.take(0).unwrap();
     ctx.insert("records", &records);
