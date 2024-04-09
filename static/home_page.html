@@ -59,15 +59,22 @@
 
         <nav aria-label="Page navigation example">
             <ul class="pagination justify-content-end">
-                <li class="page-item disabled">
-                    <a class="page-link" href="#" tabindex="-1">Previous</a>
-                </li>
-                <li class="page-item"><a class="page-link" href="#">1</a></li>
-                <li class="page-item"><a class="page-link" href="#">2</a></li>
-                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                {% if page-1>0%}
                 <li class="page-item">
-                    <a class="page-link" href="#">Next</a>
+                    <a class="page-link" href="/?page={{page-1}}&pagesize={{pagesize}}"
+                        tabindex="-1">Previous</a>
                 </li>
+                {% endif %}
+                {% for i in range(start=1,end=3) %}
+                <li class="page-item">
+                    <a class="page-link" href="/?page={{ i }}&pagesize={{ pagesize }}">{{ i }}</a>
+                </li>
+                {% endfor %}
+                {% if total_pages>=page+1 %}
+                <li class="page-item">
+                    <a class="page-link" href="/?page={{page+1}}&pagesize={{pagesize}}">Next</a>
+                </li>
+                {% endif %}
             </ul>
         </nav>
 
@@ -75,8 +82,8 @@
             <label for="file">File</label>
             <input id="file" name="file" type="file" />
             <button>Upload</button>
-          </form>
-        
+        </form>
+
 
         <!-- <form id="uploadForm" method="post" enctype="multipart/form-data" action="v1/files">
             <input type="file" id="file" style="display: none;">
@@ -105,7 +112,7 @@
                 });
             });
         </script> -->
-        
+
 
 
 

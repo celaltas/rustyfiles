@@ -7,7 +7,7 @@ use std::{
 use tempfile::NamedTempFile;
 
 #[actix_web::test]
-async fn test_upload_file_url_exist() {
+async fn test_upload_file_with_multipart() {
     let app = spawn_test_server().await;
     let client = reqwest::Client::new();
     let mut temp_file = NamedTempFile::new().unwrap();

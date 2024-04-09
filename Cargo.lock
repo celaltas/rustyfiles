@@ -3301,6 +3301,7 @@ dependencies = [
  "tempfile",
  "tera",
  "tokio",
+ "uuid",
 ]
 
 [[package]]
