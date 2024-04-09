@@ -1,15 +1,13 @@
 use actix_web::{
     get,
     web::{self, Query},
-    Error, HttpRequest, HttpResponse,
+    Error, HttpResponse,
 };
 use serde::{Deserialize, Serialize};
 use surrealdb::{engine::remote::ws::Client, Surreal};
 use tera::{Context, Tera};
 
 use crate::domain::DBFileRecord;
-
-const PAGESİZE: i32 = 5;
 
 #[derive(Debug, serde::Deserialize)]
 struct RecordCount {
@@ -56,7 +54,6 @@ pub async fn home_page(
         .await
         .unwrap();
     let count: Option<RecordCount> = result.take(0).unwrap();
-    println!("{:?}", count);
     let total_pages = count.unwrap().number_of_records / limit;
     let records: Vec<DBFileRecord> = result.take(1).unwrap();
     ctx.insert("records", &records);

@@ -43,8 +43,10 @@
                     <td>{{rec.mime_type}}</td>
                     <td>{{rec.created_at}}</td>
                     <td>
-                        <button class="btn btn-primary me-2" type="button">Download</button>
-                        <button class="btn btn-danger" type="button">Delete</button>
+                        <button class="btn btn-primary me-2" type="button"
+                            data-id="{{ rec.id.id['String']}}">Download</button>
+                        <button class="btn btn-danger" type="button"
+                            data-id="{{ rec.id.id['String']}}">Delete</button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -112,6 +114,66 @@
                 });
             });
         </script> -->
+
+        <script>
+            const deleteButtons = document.querySelectorAll('.btn-danger');
+            const downloadButtons = document.querySelectorAll('.btn-primary');
+
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const button = document.querySelector('button[data-id]');
+                    const id = button.dataset.id;
+                    if (id) {
+                        fetch(`/v1/files/${id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        })
+                            .then(response => {
+                                console.log("resposne:", response)
+                                if (response.ok) {
+                                    button.closest('tr').remove();
+                                } else {
+                                    throw new Error('File deletion failed');
+                                }
+                            })
+                            .catch(error => {
+                                console.error(error);
+                            });
+                    }
+                });
+            });
+
+            downloadButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const button = document.querySelector('button[data-id]');
+                    const id = button.dataset.id;
+
+                    if (id) {
+                        fetch(`/v1/files/${id}`, {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        })
+                            .then(response => {
+                                if (response.ok) {
+                                    return response.json();
+                                } else {
+                                    throw new Error('File download failed');
+                                }
+                            })
+                            .then(data => {
+                                console.log(data);
+                            })
+                            .catch(error => {
+                                console.error(error);
+                            });
+                    }
+                });
+            });
+        </script>
 
 
 
