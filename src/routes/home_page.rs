@@ -1,4 +1,6 @@
+use crate::domain::DBFileRecord;
 use actix_web::{
+    error::{ErrorBadRequest, ErrorInternalServerError},
     get,
     web::{self, Query},
     Error, HttpResponse,
@@ -7,17 +9,30 @@ use serde::{Deserialize, Serialize};
 use surrealdb::{engine::remote::ws::Client, Surreal};
 use tera::{Context, Tera};
 
-use crate::domain::DBFileRecord;
+#[derive(Debug, Deserialize, Serialize)]
+struct PageData {
+    records: Vec<DBFileRecord>,
+    pagination: Pagination,
+}
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 struct RecordCount {
     number_of_records: i64,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+impl Default for RecordCount {
+    fn default() -> Self {
+        RecordCount {
+            number_of_records: 0,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
 struct Pagination {
     pagesize: Option<i64>,
     page: Option<i64>,
+    total_pages: Option<i64>,
 }
 
 impl Default for Pagination {
@@ -25,6 +40,7 @@ impl Default for Pagination {
         Pagination {
             page: Some(1),
             pagesize: Some(10),
+            total_pages: Some(0),
         }
     }
 }
@@ -35,51 +51,27 @@ pub async fn home_page(
     db: web::Data<Surreal<Client>>,
 ) -> Result<HttpResponse, Error> {
     let _ = validate_or_default(&mut info)?;
+    let tera = setup_tera()?;
+    let page_data = get_records(info, &db).await?;
     let mut ctx = Context::new();
-    let mut base_dir = std::env::current_dir().unwrap();
-    base_dir.push("static");
-    let static_dir = format!("{}/**/*", base_dir.to_str().unwrap());
-    let tera = Tera::new(&static_dir).expect("failed to new tera");
-    let page = info.page.unwrap();
-    let limit = info.pagesize.unwrap();
-    let start = (page - 1) * limit;
-
-    let sql = "
-    SELECT count() AS number_of_records FROM files GROUP ALL;
-    SELECT * FROM files ORDER BY created_at DESC LIMIT $limit START $start;";
-    let mut result = db
-        .query(sql)
-        .bind(("limit", limit))
-        .bind(("start", start))
-        .await
-        .unwrap();
-    let count: Option<RecordCount> = result.take(0).unwrap();
-    let total_pages = count.unwrap().number_of_records / limit;
-    let records: Vec<DBFileRecord> = result.take(1).unwrap();
-    ctx.insert("records", &records);
-    ctx.insert("pagesize", &info.pagesize);
-    ctx.insert("page", &info.page);
-    ctx.insert("total_pages", &total_pages);
-
+    ctx.insert("data", &page_data);
     let rendered = tera
         .render("home_page.html", &ctx)
-        .expect("Failed to render template");
+        .map_err(|err| ErrorInternalServerError(err.to_string()))?;
     Ok(HttpResponse::Ok().body(rendered))
 }
 
 fn validate_or_default(info: &mut web::Query<Pagination>) -> Result<(), Error> {
     if let Some(pagesize) = info.pagesize {
         if pagesize <= 0 {
-            return Err(actix_web::error::ErrorBadRequest(
-                "pagesize must be positive",
-            ));
+            return Err(ErrorBadRequest("pagesize must be positive"));
         }
     } else {
         info.pagesize = Some(10);
     }
     if let Some(page) = info.page {
         if page <= 0 {
-            return Err(actix_web::error::ErrorBadRequest("page must be positive"));
+            return Err(ErrorBadRequest("page must be positive"));
         }
     } else {
         info.page = Some(1);
@@ -88,4 +80,59 @@ fn validate_or_default(info: &mut web::Query<Pagination>) -> Result<(), Error> {
         *info = Query(Pagination::default());
     }
     Ok(())
+}
+
+async fn get_records(
+    mut info: web::Query<Pagination>,
+    db: &web::Data<Surreal<Client>>,
+) -> Result<PageData, Error> {
+    let page = info
+        .page
+        .ok_or_else(|| ErrorBadRequest("Missing page parameter"))?;
+    let limit = info
+        .pagesize
+        .ok_or_else(|| ErrorBadRequest("Missing pagesize parameter"))?;
+    let start = (page - 1) * limit;
+
+    let sql = "
+    SELECT count(*) AS number_of_records FROM files;
+    SELECT * FROM files ORDER BY created_at DESC LIMIT $1 OFFSET $2;";
+
+    let mut result = db
+        .query(sql)
+        .bind(&limit)
+        .bind(&start)
+        .await
+        .map_err(|err| ErrorInternalServerError(err.to_string()))?;
+
+    let count: Option<RecordCount> = result
+        .take(0)
+        .map_err(|err| ErrorInternalServerError(err.to_string()))?;
+
+    if let Some(count) = count {
+        info.total_pages = Some(count.number_of_records / limit)
+    }
+
+    let records: Vec<DBFileRecord> = result
+        .take(1)
+        .map_err(|err| ErrorInternalServerError(err.to_string()))?;
+
+    Ok(PageData {
+        records,
+        pagination: info.into_inner(),
+    })
+}
+
+fn setup_tera() -> Result<Tera, Error> {
+    let current_dir = std::env::current_dir().map_err(|err| {
+        ErrorInternalServerError(format!("Failed to get current directory: {}", err))
+    })?;
+
+    let mut base_dir = current_dir;
+    base_dir.push("static");
+
+    let static_dir = format!("{}/**/*", base_dir.to_str().unwrap());
+
+    Tera::new(&static_dir)
+        .map_err(|err| ErrorInternalServerError(format!("Failed to initialize Tera: {}", err)))
 }
