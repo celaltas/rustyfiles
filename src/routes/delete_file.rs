@@ -1,5 +1,4 @@
 use std::fs;
-
 use crate::domain::DBFileRecord;
 use actix_web::{delete, error::ErrorNotFound, web, Error, HttpResponse};
 use surrealdb::{engine::remote::ws::Client, Surreal};
@@ -18,14 +17,12 @@ pub async fn delete_file(
     match file {
         Some(record) => {
             let filename = record.filename;
-            let mut path = std::env::current_dir().unwrap();
-            path.push(storage_path.as_str());
-            path.push(filename);
+            let path = std::env::current_dir().unwrap();
+            let _ = path.join(storage_path.as_str()).join(filename);
 
-            match fs::remove_file(path) {
-                Ok(_) => Ok(HttpResponse::Ok().body(format!("delete file {}", id.clone()))),
-                Err(err) => Err(ErrorNotFound(err.to_string())),
-            }
+            fs::remove_file(path)
+                .map(|_| HttpResponse::Ok().body(format!("delete file {}", id)))
+                .map_err(|err| ErrorNotFound(err.to_string()))
         }
         None => Err(ErrorNotFound("file not found")),
     }
