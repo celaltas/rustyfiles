@@ -6,7 +6,6 @@ use surrealdb::sql::Thing;
 pub struct DBFileRecord {
     pub id: Thing,
     pub filename: String,
-    // pub path: String,
     pub size: u64,
     pub mime_type: String,
     #[serde(with = "chorono_serde")]

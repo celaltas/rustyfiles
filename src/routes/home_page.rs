@@ -40,7 +40,7 @@ impl Default for Pagination {
         Pagination {
             page: Some(1),
             pagesize: Some(10),
-            total_pages: Some(0),
+            total_pages: Some(1),
         }
     }
 }
@@ -62,6 +62,7 @@ pub async fn home_page(
 }
 
 fn validate_or_default(info: &mut web::Query<Pagination>) -> Result<(), Error> {
+    info.total_pages = Some(1);
     if let Some(pagesize) = info.pagesize {
         if pagesize <= 0 {
             return Err(ErrorBadRequest("pagesize must be positive"));
@@ -95,13 +96,13 @@ async fn get_records(
     let start = (page - 1) * limit;
 
     let sql = "
-    SELECT count(*) AS number_of_records FROM files;
-    SELECT * FROM files ORDER BY created_at DESC LIMIT $1 OFFSET $2;";
+    SELECT count() AS number_of_records FROM files GROUP ALL;
+    SELECT * FROM files ORDER BY created_at DESC LIMIT $limit START $start;";
 
     let mut result = db
         .query(sql)
-        .bind(&limit)
-        .bind(&start)
+        .bind(("limit", limit))
+        .bind(("start", start))
         .await
         .map_err(|err| ErrorInternalServerError(err.to_string()))?;
 

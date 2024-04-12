@@ -5,11 +5,11 @@ use surrealdb::{engine::remote::ws::Client, Surreal};
 
 #[delete("v1/files/{id}")]
 pub async fn delete_file(
-    path: web::Path<String>,
+    id: web::Path<String>,
     db: web::Data<Surreal<Client>>,
     storage_path: web::Data<String>,
 ) -> Result<HttpResponse, Error> {
-    let id = path.into_inner();
+    let id = id.into_inner();
     let file: Option<DBFileRecord> = db
         .delete(("files", id.clone()))
         .await
@@ -17,8 +17,9 @@ pub async fn delete_file(
     match file {
         Some(record) => {
             let filename = record.filename;
-            let path = std::env::current_dir().unwrap();
-            let _ = path.join(storage_path.as_str()).join(filename);
+            let mut path = std::env::current_dir().unwrap();
+            path.push(storage_path.as_str());
+            path.push(filename);
 
             fs::remove_file(path)
                 .map(|_| HttpResponse::Ok().body(format!("delete file {}", id)))

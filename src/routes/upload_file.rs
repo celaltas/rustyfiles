@@ -5,11 +5,10 @@ use actix_web::{
     web::{self, Redirect},
     Error,
 };
-use chrono::{DateTime, Local};
+use chrono::Local;
 use futures_util::StreamExt as _;
 use std::{fs, io::Write, path::PathBuf};
 use surrealdb::{engine::remote::ws::Client, Surreal};
-
 use crate::domain::{DBFileRecord, FileRecord};
 
 #[post("v1/files")]
@@ -57,10 +56,6 @@ async fn create_file_record(path: &PathBuf, db: &web::Data<Surreal<Client>>) -> 
     let current_local = Local::now();
     let record = FileRecord {
         filename: filename.clone(),
-        path: path
-            .to_str()
-            .ok_or(ErrorInternalServerError("File path not found"))?
-            .to_string(),
         size: size,
         mime_type: mime,
         created_at: current_local,
